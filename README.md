@@ -1,5 +1,7 @@
 # RabbitMQClient
 
+[![](https://jitpack.io/v/GtechGovind/RabbitMQClient.svg)](https://jitpack.io/#GtechGovind/RabbitMQClient)
+
 A Kotlin-based, simplified client for interacting with RabbitMQ. The `RabbitMQClient` library enhances the standard RabbitMQ client by adding automatic reconnection, easier connection management, queue management with TTL, and an intuitive API for sending and receiving messages.
 
 ## Why Build a Custom Client Library?
@@ -82,29 +84,55 @@ val client = RabbitMQClient.Builder()
     .build()
 ```
 
+## Producers
+
+In RabbitMQ, a **Producer** is responsible for sending messages to an exchange. This library simplifies the process by allowing you to declare exchanges and queues, and to send messages easily.
+
 ### Declaring Exchanges
-Create exchanges with various configurations as needed. This allows setting exchange types, durability, and other parameters.
+An exchange routes messages to the correct queues based on the routing keys. Our `RabbitMQClient` supports different exchange types, including `DIRECT`, `FANOUT`, `TOPIC`, and `HEADERS`.
 
 ```kotlin
 client.declareExchange("myExchange", BuiltinExchangeType.DIRECT, durable = true, autoDelete = false)
 ```
 
+#### Exchange Parameters
+- `name`: The exchange name.
+- `type`: The type of exchange (`DIRECT`, `FANOUT`, `TOPIC`, etc.).
+- `durable`: If `true`, the exchange will survive a broker restart.
+- `autoDelete`: If `true`, the exchange will be deleted when no longer in use.
+
 ### Declaring Queues with TTL
-Declare queues with TTL (Time-To-Live) and expiration settings. This feature helps in managing message lifetimes effectively.
+Queues store messages until they are consumed. With `RabbitMQClient`, you can set Time-To-Live (TTL) for queues to automatically expire old messages, which is useful for managing memory and ensuring only recent messages are processed.
 
 ```kotlin
 client.declareQueueWithTTL("myQueue", messageTTLInDays = 7, queueExpiresInYears = 1, durable = true, autoDelete = false)
 ```
 
+#### Queue Parameters
+- `name`: The queue name.
+- `messageTTLInDays`: Sets how long messages live in the queue.
+- `queueExpiresInYears`: Sets how long the queue itself remains available.
+- `durable`: If `true`, the queue will survive a broker restart.
+- `autoDelete`: If `true`, the queue will be deleted when no longer in use.
+
 ### Sending Messages
-Use `sendMessage` to send messages to an exchange with a routing key.
+With `RabbitMQClient`, sending messages to an exchange is simplified. You only need to specify the exchange, the routing key, and the message content.
 
 ```kotlin
 client.sendMessage("myExchange", "myRoutingKey", "Hello, RabbitMQ!")
 ```
 
+#### Message Sending Parameters
+- `exchange`: The exchange to which the message will be sent.
+- `routingKey`: The routing key used by the exchange to route the message to the appropriate queue.
+- `message`: The message content.
+
+## Consumers
+
+A **Consumer** is responsible for receiving messages from a queue. The `RabbitMQClient` makes it easy to set up consumers and process incoming messages with a custom handler function.
+
 ### Consuming Messages
-To consume messages from a queue, use the `consumeMessages` function and define a custom handler function to process each message.
+To start consuming messages, simply specify the queue name and a handler function to process each message.
 
 ```kotlin
 client.consumeMessages("myQueue") { message ->
@@ -112,36 +140,34 @@ client.consumeMessages("myQueue") { message ->
 }
 ```
 
+#### Consumer Parameters
+- `queue`: The queue from which messages will be consumed.
+- `handler`: A lambda function to process each message as it arrives.
+
+### Handling Long-Running Tasks
+Consumers may need to perform long-running tasks when processing messages. It’s recommended to handle these tasks asynchronously to avoid blocking the consumer, which can lead to message backlog.
+
+### Auto Acknowledgments
+By default, `RabbitMQClient` uses auto-acknowledgments, meaning the broker assumes that the message was successfully processed as soon as it is delivered to the consumer. This is convenient, but if your use case requires manual acknowledgment, you can adjust the library to handle this for more control.
+
+### Error Handling in Consumers
+To ensure reliable message processing, the library supports error handling during message consumption. If an error occurs, you can configure the client to retry processing the message, log the error, or move it to a dead-letter queue for later inspection.
+
+---
+
 ### Closing the Client
-Always close the client gracefully to ensure resources are properly released.
+
+Always close the client connection gracefully when done:
 
 ```kotlin
 client.close()
 ```
 
-## Design Choices and Methodology
-
-### Builder Pattern
-The `Builder` pattern provides flexibility and readability, allowing users to configure and instantiate `RabbitMQClient` with custom parameters while keeping the main API simple and clean.
-
-### Connection Management and Auto-Reconnect
-One of the core features is the robust connection management:
-- **Automatic reconnection** handles initial connection failures and connection drops by retrying at specified intervals.
-- **Reconnect delay** and maximum retry attempts provide control over how aggressively the client attempts to restore connections.
-
-### Declarative APIs for Queues and Exchanges
-The client provides convenient methods for declaring exchanges and queues with custom settings, including TTL (time-to-live) for messages and expiration for queues. This API makes configuring RabbitMQ resources straightforward and consistent.
-
-### Messaging and Consumers
-The send and consume methods use asynchronous processing, allowing for efficient and responsive message handling. The `consumeMessages` method is flexible and supports a custom handler for each message, providing users control over message processing logic.
-
-### Logging Support
-The client includes a custom logger option for easy integration with any logging system, giving users the freedom to capture and format log output as needed.
-
 ## Future Scope
 
-Potential future enhancements for `RabbitMQClient` could include:
-- **Enhanced error handling** and custom exception classes.
-- **Monitoring and metrics** integration for tracking usage and health metrics.
-- **Extended support** for advanced RabbitMQ features such as message priorities, dead-letter exchanges, and additional exchange types.
-- **Asynchronous operations** for improved non-blocking behavior in high-throughput systems.
+Here are some potential enhancements and additions that could be considered for future development:
+- **Enhanced Error Handling**: Adding more robust error handling mechanisms and retries.
+- **Metrics and Monitoring**: Integrating with monitoring tools to track the performance and health of the RabbitMQ interactions.
+- **Advanced Features**: Implementing more advanced RabbitMQ features like priorities, dead-letter exchanges, and more.
+- **Configuration Management**: Simplifying configuration management using external configuration files or environment variables.
+- **Asynchronous Operations**: Further optimizing the client for non-blocking asynchronous operations.
