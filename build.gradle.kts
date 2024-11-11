@@ -14,7 +14,7 @@ repositories {
 dependencies {
 
     val rabbitMQVersion = "5.22.0"
-    implementation("com.rabbitmq:amqp-client:$rabbitMQVersion")
+    api("com.rabbitmq:amqp-client:$rabbitMQVersion")
 
     val coroutineVersion = "1.7.3"
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutineVersion")
